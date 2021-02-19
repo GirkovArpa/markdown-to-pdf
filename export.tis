@@ -1,0 +1,33 @@
+const DOC = include library "sciter-pdf";
+
+$(#export-to-pdf) << event click {
+  Doc.newDoc();
+  const page = Doc.addPage();
+  page.setSize(page.SIZE_A4, page.PORTRAIT);
+  const h = page.getHeight();
+  const w = page.getWidth();
+  var y = 0.0;
+  for (var (i, element) in $$(htmlview > *)) {
+    const font_family = "Helvetica"; //element.style["font-family"];
+    const size = element.style["font-size"].toInteger();
+    const { tag, text } = element;
+    //stdout.println(JSON.stringify({ font_family: font_family, size: size, tag: tag, text: text }));
+    const re = /h\d/;
+    const font_name = String.$({font_family}{re.test(tag) ? "-Bold" : ""});
+    const font = Doc.getFont(font_name, null);
+    page.setFontAndSize(font, size);
+    page.beginText();
+    page.textRect({
+        left: 20, 
+        top: (h - (y + 20)), 
+        right: w, 
+        bottom: 50
+      }, 
+      text, 
+      page.TALIGN_LEFT
+    );
+    page.endText();
+    y += (size.toFloat() * 1.5) + 5.0;;
+  }
+  Doc.save(URL.toPath(self.url('export.pdf')));
+}
