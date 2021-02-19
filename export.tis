@@ -1,5 +1,22 @@
 const DOC = include library "sciter-pdf";
 
+const internal_fonts = [
+  "Courier",
+  "Courier-Bold",
+  "Courier-Oblique",
+  "Courier-BoldOblique",
+  "Helvetica",
+  "Helvetica-Bold",
+  "Helvetica-Oblique",
+  "Helvetica-BoldOblique",
+  "Times-Roman",
+  "Times-Bold",
+  "Times-Italic",
+  "Times-BoldItalic",
+  "Symbol",
+  "ZapfDingbats"
+];
+
 $(#export-to-pdf) << event click {
   Doc.newDoc();
   const page = Doc.addPage();
@@ -8,13 +25,17 @@ $(#export-to-pdf) << event click {
   const w = page.getWidth();
   var y = 0.0;
   for (var (i, element) in $$(htmlview > *)) {
-    const font_family = "Helvetica"; //element.style["font-family"];
+    const font_family = element.style["font-family"];
     const size = element.style["font-size"].toInteger();
     const { tag, text } = element;
-    //stdout.println(JSON.stringify({ font_family: font_family, size: size, tag: tag, text: text }));
     const re = /h\d/;
-    const font_name = String.$({font_family}{re.test(tag) ? "-Bold" : ""});
-    const font = Doc.getFont(font_name, null);
+    const font_name = String.$({font_family}{re.test(tag) ? "-Bold" : "-Regular"});
+    const font_path = String.$(C:\\Windows\\Fonts\\{font_name.toLowerCase()}.ttf);
+    const font = internal_fonts[font_name] !== undefined
+    ? Doc.getFont(font_name, null)
+    : System.scanFiles(font_path.replace("-", " "))
+    ? Doc.loadTTFontFromFile(font_path.replace("-", " "), null)
+    : Doc.getFont("Helvetica", null);
     page.setFontAndSize(font, size);
     page.beginText();
     page.textRect({
