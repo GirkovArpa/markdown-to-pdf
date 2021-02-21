@@ -24,7 +24,15 @@ plaintext.markdown > text[region=ul]::mark(offset) { background-color:#efefef; }
 plaintext.markdown > text[region=dt]::mark(offset) { background-color:#efefef; } 
 plaintext.markdown > text::mark(offset) { background-color:#eaeaea; }*/
 
-htmlview { display:block; background:white; padding:0.5em; overflow: scroll-indicator; size:*; }
+htmlview { 
+  display:block; 
+  background:white; 
+  padding:0.5em; 
+  overflow: scroll-indicator; 
+  size:*; 
+  font-family: Courier;
+}
+
 htmlview pre { margin:0; border:1dip solid #ccc; background: @PLAIN; padding:4dip;}
 htmlview code { background: @PLAIN; }
 

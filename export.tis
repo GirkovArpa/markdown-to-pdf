@@ -30,25 +30,25 @@ $(#export-to-pdf) << event click {
     const { tag, text } = element;
     const re = /h\d/;
     const font_name = String.$({font_family}{re.test(tag) ? "-Bold" : "-Regular"});
-    const font_path = String.$(C:\\Windows\\Fonts\\{font_name.toLowerCase()}.ttf);
+    const font_path = System.path(#SYSTEM, String.$(/fonts/{font_name.toLowerCase()}.ttf));
     const font = internal_fonts[font_name] !== undefined
     ? Doc.getFont(font_name, null)
     : System.scanFiles(font_path.replace("-", " "))
-    ? Doc.loadTTFontFromFile(font_path.replace("-", " "), null)
+    ? Doc.loadTTFontFromFile(font_path.replace("-", " "), "UTF-8")
     : Doc.getFont("Helvetica", null);
     page.setFontAndSize(font, size);
     page.beginText();
+    var (x1,y1,x2,y2) = element.box(#rect, #inner, #parent);
     page.textRect({
-        left: 20, 
-        top: (h - (y + 20)), 
-        right: w, 
-        bottom: 50
+        left: x1, 
+        top: h - y1, 
+        right: x2, 
+        bottom: h - y2
       }, 
       text, 
       page.TALIGN_LEFT
     );
     page.endText();
-    y += (size.toFloat() * 1.5) + 5.0;;
   }
   Doc.save(URL.toPath(self.url('export.pdf')));
 }
