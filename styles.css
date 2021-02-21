@@ -29,7 +29,7 @@ htmlview {
   background:white; 
   padding:0.5em; 
   overflow: scroll-indicator; 
-  size:*; 
+  size: *; 
   font-family: Courier;
 }
 

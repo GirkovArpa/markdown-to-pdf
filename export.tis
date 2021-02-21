@@ -1,4 +1,4 @@
-const DOC = include library "sciter-pdf";
+include library "sciter-pdf";
 
 const internal_fonts = [
   "Courier",
@@ -17,38 +17,87 @@ const internal_fonts = [
   "ZapfDingbats"
 ];
 
-$(#export-to-pdf) << event click {
+function Element.toPdf() {
   Doc.newDoc();
   const page = Doc.addPage();
   page.setSize(page.SIZE_A4, page.PORTRAIT);
-  const h = page.getHeight();
-  const w = page.getWidth();
-  var y = 0.0;
-  for (var (i, element) in $$(htmlview > *)) {
-    const font_family = element.style["font-family"];
-    const size = element.style["font-size"].toInteger();
-    const { tag, text } = element;
-    const re = /h\d/;
-    const font_name = String.$({font_family}{re.test(tag) ? "-Bold" : "-Regular"});
-    const font_path = System.path(#SYSTEM, String.$(/fonts/{font_name.toLowerCase()}.ttf));
-    const font = internal_fonts[font_name] !== undefined
-    ? Doc.getFont(font_name, null)
-    : System.scanFiles(font_path.replace("-", " "))
-    ? Doc.loadTTFontFromFile(font_path.replace("-", " "), "UTF-8")
-    : Doc.getFont("Helvetica", null);
-    page.setFontAndSize(font, size);
-    page.beginText();
-    var (x1,y1,x2,y2) = element.box(#rect, #inner, #parent);
-    page.textRect({
-        left: x1, 
-        top: h - y1, 
-        right: x2, 
-        bottom: h - y2
-      }, 
-      text, 
-      page.TALIGN_LEFT
-    );
-    page.endText();
+
+  //const font_name = Doc.loadTTFontFromFile(System.path(#SYSTEM, "/fonts/consola.ttf"), true);
+  //const bold_name = Doc.loadTTFontFromFile(System.path(#SYSTEM, "/fonts/consolab.ttf"), true);
+  //const font = Doc.getFont(font_name, "UTF-8");
+  
+  //Using fix fonts as of now
+  const font = Doc.getFont("Courier", null);
+  const bold = Doc.getFont("Courier-Bold", null);
+  const height = page.getHeight();
+  
+  var (x1,y1,x2,y2) = this.box(#rect, #border, #root);
+
+  function border(page, el) {
+    const s = el.style.all();
+    page.setRGBStroke(0.0, 0.0, 0.0);
+
+    var (x,y,w,h) = el.box(#rectw, #border, #root);
+
+    x = Length.make(x, #px).toFloat(#pt);
+    y = Length.make(y, #px).toFloat(#pt);
+    w = Length.make(w, #px).toFloat(#pt);
+    h = Length.make(h, #px).toFloat(#pt);
+    page.setLineWidth(0.5);
+    page.rectangle(x,height-y-h,w,h);
+    page.stroke();
   }
+
+  function traverse(element = null){
+    for(var el in element) {
+      debug info: el.text, el.tag;
+      if(symbol(el.tag) in [#div, #td, #th, #thead, #pre]){
+        border(page, el);
+      }  
+
+      if(symbol(el.tag) in [#p, #pre, #label, #code, #b, #span, 
+                            #td, #th, #h1, #h2, #h3, #h4, #h5, #h6, 
+                            #output, #li, #strong, #em, #del, #dl, #dt, #dd] 
+                            && !el.length) {
+        //debug info: el.tag, el.contentModel;
+        const edge = symbol(el.tag) in [#tr, #th, #td, #h1, #h2, #h3, #h4, #h5, #h6] ? #inner : #margin;
+        var (x1,y1,x2,y2) = el.box(#rect, edge, #root);
+        x1 = Length.make(x1, #px).toFloat(#pt);
+        y1 = Length.make(y1, #px).toFloat(#pt);
+        x2 = Length.make(x2, #px).toFloat(#pt);
+        y2 = Length.make(y2, #px).toFloat(#pt);
+
+        page.beginText();
+        const font_size = el.style['font-size'];
+        const currentFont = symbol(el.tag) in [#b, #h1, #h2, #h3, #h4, #h5, #h6, #strong, #dt] ? bold : font;
+        //reducing the font size, as sciter scale doesnt match that of pdf scale
+        page.setFontAndSize(currentFont, font_size.toFloat()-0.5);
+        debug info: el.html;
+        page.textRect(
+          {
+            left:   x1, 
+            top:    height-y1, 
+            right:  x2, 
+            bottom: height-y2
+          }, 
+          el.html, 
+          page.TALIGN_LEFT
+        );
+        page.endText();
+      }
+      traverse(el)  
+    }        
+  }     
+  traverse(self.$(frame#print > htmlview));
   Doc.save(URL.toPath(self.url('export.pdf')));
+  Sciter.launch(self.url('export.pdf'));
+}
+
+$(#export-to-pdf) << event click {
+  //self.$(htmlview).toPdf();
+  const toPrint = self.$(htmlview);
+  self.$(body).append(<frame #print style='position: fixed; top: 0; left: 0; width: 200mm; z-index: -1'/>);
+  self.$(frame#print).content(toPrint.clone());
+  self.$(frame#print).toPdf();
+  self.$(frame#print).remove();
 }
